@@ -26,6 +26,11 @@ class TrainNN(ReadCSV):
 
     def __init__(self, csv_file, polynomial_degree):
         '''
+        initial parameters
+        
+        :param csv_file: csv file path
+        :param polynomial_degree: int
+
         set objects:
         vector_points_x, vector_points_y from csv file
         polynomial_degree
@@ -46,11 +51,26 @@ class TrainNN(ReadCSV):
             x_n = np.array([x**(n+1) for x in self.vector_points_x])
             X.append(x_n)
         self.X = np.array(X).T
-        self.B = np.zeros(k)
+        self.B = np.zeros(polynomial_degree+1)
         self.Y = np.array(self.vector_points_y)
         self.alpha = 0.0001
 
+    def train(self):
+        inital_cost = self.cost_function(self.X, self.Y, self.B)
 
+    def cost_function(self, X, Y, B):
+        '''
+        Cost function
+        k = length of vector_points_x or vector_points_y
+        :param X: [[1, x1^1, x1^2, ..., x1^n], [1, x2^1, x2^2, ..., x2^n], ..., [1, xk^1, xk^2, ..., xk^n]]
+        :param Y: [y1, y2, ..., yk]
+        :param B (start polynomial coefficient): [1(1), 1(2), ..., 1(polynomial_degree+1)]
+        :return: float
+        '''
+
+        m = len(Y)
+        J = np.sum((X.dot(B) - Y) ** 2) / (2 * m)
+        return (J)
 
 # class Classify()
 #     ...
@@ -60,7 +80,7 @@ def main():
     readcsv = ReadCSV()
     csv_file = readcsv.set_csv_file_path(csv_file_path)
     # vetor_points_x, vetor_points_y = readcsv.read_csv_data(csv_file=csv_file)
-    TrainNN(csv_file, 3)
+    TrainNN(csv_file, 3).train()
 
 
 
