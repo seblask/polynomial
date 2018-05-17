@@ -79,9 +79,24 @@ class TrainNN(ReadCSV):
         :param Y_pred: predict Y values
         :return: float - the model is more accurate as the value is small
         '''
+
         rmse = np.sqrt(sum((Y - Y_pred) ** 2) / len(Y))
         return(rmse)
 
+    # Model Evaluation - R2 Score
+    def r2_score(self, Y, Y_pred):
+        '''
+        Model Evaluation - Coefficient of Determination (R2 Score)
+        :param Y: input Y values
+        :param Y_pred: predict Y values
+        :return: float - the model is more accurate as the value is small
+        '''
+
+        mean_y = np.mean(Y)
+        ss_tot = sum((Y - mean_y) ** 2)
+        ss_res = sum((Y - Y_pred) ** 2)
+        r2 = 1 - (ss_res / ss_tot)
+        return(r2)
 
 # class Classify()
 #     ...
