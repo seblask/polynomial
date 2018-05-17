@@ -6,7 +6,7 @@ class ReadCSV():
 
     def set_csv_file_path(self, csv_file):
         self.csv_file = csv_file
-        return (csv_file)
+        return(csv_file)
 
     def read_csv_data(self, csv_file):
         '''
@@ -20,7 +20,7 @@ class ReadCSV():
                 x, y = line.strip().split(',')
                 vetor_points_x.append(float(x))
                 vetor_points_y.append(float(y))
-        return (vetor_points_x, vetor_points_y)
+        return(vetor_points_x, vetor_points_y)
 
 class TrainNN(ReadCSV):
 
@@ -56,7 +56,7 @@ class TrainNN(ReadCSV):
         self.alpha = 0.0001
 
     def train(self):
-        inital_cost = self.cost_function(self.X, self.Y, self.B)
+        initial_cost = self.cost_function(self.X, self.Y, self.B)
 
     def cost_function(self, X, Y, B):
         '''
@@ -70,7 +70,18 @@ class TrainNN(ReadCSV):
 
         m = len(Y)
         J = np.sum((X.dot(B) - Y) ** 2) / (2 * m)
-        return (J)
+        return(J)
+
+    def rmse(self, Y, Y_pred):
+        '''
+        Model Evaluation - Root Mean Squared Error
+        :param Y: input Y values
+        :param Y_pred: predict Y values
+        :return: float - the model is more accurate as the value is small
+        '''
+        rmse = np.sqrt(sum((Y - Y_pred) ** 2) / len(Y))
+        return(rmse)
+
 
 # class Classify()
 #     ...
@@ -80,8 +91,7 @@ def main():
     readcsv = ReadCSV()
     csv_file = readcsv.set_csv_file_path(csv_file_path)
     # vetor_points_x, vetor_points_y = readcsv.read_csv_data(csv_file=csv_file)
-    TrainNN(csv_file, 3).train()
-
+    TrainNN(csv_file, 2).train()
 
 
 if __name__ == "__main__":
