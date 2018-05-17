@@ -57,6 +57,8 @@ class TrainNN(ReadCSV):
 
     def train(self):
         initial_cost = self.cost_function(self.X, self.Y, self.B)
+        B, cost, rmse, r2_score = self.gradient_descent(self.X, self.Y, self.B, self.alpha)
+        return(B, cost, rmse, r2_score)
 
     def cost_function(self, X, Y, B):
         '''
@@ -138,8 +140,8 @@ def main():
     readcsv = ReadCSV()
     csv_file = readcsv.set_csv_file_path(csv_file_path)
     # vetor_points_x, vetor_points_y = readcsv.read_csv_data(csv_file=csv_file)
-    TrainNN(csv_file, 2).train()
-
+    B, cost, rmse, r2_score = TrainNN(csv_file, 2).train()
+    print(B, cost, rmse, r2_score)
 
 if __name__ == "__main__":
     main()
