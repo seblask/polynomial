@@ -83,7 +83,6 @@ class TrainNN(ReadCSV):
         rmse = np.sqrt(sum((Y - Y_pred) ** 2) / len(Y))
         return(rmse)
 
-    # Model Evaluation - R2 Score
     def r2_score(self, Y, Y_pred):
         '''
         Model Evaluation - Coefficient of Determination (R2 Score)
@@ -97,6 +96,39 @@ class TrainNN(ReadCSV):
         ss_res = sum((Y - Y_pred) ** 2)
         r2 = 1 - (ss_res / ss_tot)
         return(r2)
+
+    def gradient_descent(self, X, Y, B, alpha):
+        '''
+        Gradient Descent
+        :param X: input X values
+        :param Y: input Y values
+        :param B: start polynomial coefficient
+        :param alpha: parameter
+        :return: B - output polynomial coefficient
+                cost, rmse, r2_score - this parameters say about accuracy of model
+        '''
+
+        Y_pred = Y * 2
+        cost = 0
+        rmse = self.rmse(Y, Y_pred)
+        r2_score = self.r2_score(Y, Y_pred)
+        m = len(Y)
+
+        while rmse > 0.001:
+            # Hypothesis Values
+            h = X.dot(B)
+            # difference b/w hypothesis and actual Y
+            loss = h - Y
+            # gradient calculation
+            gradient = X.T.dot(loss) / m
+            # changing values of B using gradient
+            B = B - alpha * gradient
+            # new cost value
+            cost = self.cost_function(X, Y, B)
+            Y_pred = X.dot(B)
+            rmse = self.rmse(Y, Y_pred)
+            r2_score = self.r2_score(Y, Y_pred)
+        return(B, cost, rmse, r2_score)
 
 # class Classify()
 #     ...
