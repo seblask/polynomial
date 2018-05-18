@@ -21,6 +21,7 @@ class ReadCSV():
 
         vetor_points_x = []
         vetor_points_y = []
+        csv_file = os.path.abspath(csv_file)
         with open(csv_file, 'r') as csvfile:
             for line in csvfile:
                 x, y = line.strip().split(',')
@@ -30,11 +31,17 @@ class ReadCSV():
 
 class ModelFileOperations():
 
-    def save_model(self, model, path_to_save):
-        path_to_save = os.path.abspath(path_to_save)
-        with open(path_to_save, 'wb') as write_model:
+    def save_model(self, model, model_path):
+        model_path = os.path.abspath(model_path)
+        with open(model_path, 'wb') as write_model:
             pickle.dump(model, write_model)
-        return(path_to_save)
+        return(model_path)
+
+    def open_model(self, model_path):
+        model_path = os.path.abspath(model_path)
+        with open(model_path, 'rb') as read_model:
+            model = pickle.load(read_model)
+        return(model)
 
 class TrainNN(ReadCSV):
 
@@ -61,10 +68,10 @@ class TrainNN(ReadCSV):
         k = len(self.vector_points_x)
         X = []
         x0 = np.ones(k)
-        X.append(x0)
-        for n in range(polynomial_degree):
+        for n in reversed(range(polynomial_degree)):
             x_n = np.array([x**(n+1) for x in self.vector_points_x])
             X.append(x_n)
+        X.append(x0)
         self.X = np.array(X).T
         self.B = np.zeros(polynomial_degree+1)
         self.Y = np.array(self.vector_points_y)
@@ -147,15 +154,17 @@ class TrainNN(ReadCSV):
             r2_score = self.r2_score(Y, Y_pred)
         return(B, cost, rmse, r2_score)
 
-# class Classify()
+# class Classify():
 #     ...
 
 def main():
-    csv_file_path = 'ai-task-132.csv'
-
-    B, cost, rmse, r2_score = TrainNN(csv_file_path, 2).train()
-    print(B)
-    ModelFileOperations().save_model(model=B, path_to_save='model')
+    # csv_file_path = 'ai-task-132.csv'
+    #
+    # B, cost, rmse, r2_score = TrainNN(csv_file_path, 2).train()
+    # print(B)
+    # ModelFileOperations().save_model(model=B, model_path='model')
+    model = ModelFileOperations().open_model(model_path='model')
+    print(model)
 
 if __name__ == "__main__":
     main()
