@@ -154,17 +154,30 @@ class TrainNN(ReadCSV):
             r2_score = self.r2_score(Y, Y_pred)
         return(B, cost, rmse, r2_score)
 
-# class Classify():
-#     ...
+class Classify():
+
+    def __init__(self, model, x):
+        self.model = model
+        self.x = x
+
+    def estimate(self):
+        polynomial_coefficients = self.model
+        polynomial_degree = len(self.model)
+        powers = [n for n in reversed(range(polynomial_degree))]
+        y = 0
+
+        for power, coefficient in zip(powers, polynomial_coefficients):
+            y = y + (coefficient * (self.x**power))
+        return(y)
 
 def main():
     # csv_file_path = 'ai-task-132.csv'
-    #
     # B, cost, rmse, r2_score = TrainNN(csv_file_path, 2).train()
-    # print(B)
     # ModelFileOperations().save_model(model=B, model_path='model')
+
     model = ModelFileOperations().open_model(model_path='model')
-    print(model)
+    y = Classify(model=model, x=3).estimate()
+    print(y)
 
 if __name__ == "__main__":
     main()
