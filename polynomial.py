@@ -1,12 +1,18 @@
 #-*- coding: utf-8 -*-
 
 import numpy as np
+import os
+import pickle
+
+# class CheckFileExist():
 
 class ReadCSV():
 
-    def set_csv_file_path(self, csv_file):
+    def __init__(self, csv_file):
         self.csv_file = csv_file
-        return(csv_file)
+    # def set_csv_file_path(self, csv_file):
+    #     self.csv_file = csv_file
+    #     return(csv_file)
 
     def read_csv_data(self, csv_file):
         '''
@@ -21,6 +27,14 @@ class ReadCSV():
                 vetor_points_x.append(float(x))
                 vetor_points_y.append(float(y))
         return(vetor_points_x, vetor_points_y)
+
+class ModelFileOperations():
+
+    def save_model(self, model, path_to_save):
+        path_to_save = os.path.abspath(path_to_save)
+        with open(path_to_save, 'wb') as write_model:
+            pickle.dump(model, write_model)
+        return(path_to_save)
 
 class TrainNN(ReadCSV):
 
@@ -41,6 +55,7 @@ class TrainNN(ReadCSV):
         alpha
         '''
 
+        super().__init__(csv_file)
         self.vector_points_x, self.vector_points_y = self.read_csv_data(csv_file)
         self.polynomial_degree = polynomial_degree
         k = len(self.vector_points_x)
@@ -137,11 +152,10 @@ class TrainNN(ReadCSV):
 
 def main():
     csv_file_path = 'ai-task-132.csv'
-    readcsv = ReadCSV()
-    csv_file = readcsv.set_csv_file_path(csv_file_path)
-    # vetor_points_x, vetor_points_y = readcsv.read_csv_data(csv_file=csv_file)
-    B, cost, rmse, r2_score = TrainNN(csv_file, 2).train()
-    print(B, cost, rmse, r2_score)
+
+    B, cost, rmse, r2_score = TrainNN(csv_file_path, 2).train()
+    print(B)
+    ModelFileOperations().save_model(model=B, path_to_save='model')
 
 if __name__ == "__main__":
     main()
