@@ -5,6 +5,7 @@ import os
 import pickle
 import argparse
 import sys
+import math
 
 # class CheckFileExist():
 
@@ -14,10 +15,12 @@ class ArgumentParser():
 
     def parser(self):
         parser = argparse.ArgumentParser()
-        parser.add_argument('-t', '--train', action='store_true', default=False, dest='mode_train',
+        parser.add_argument('-t', '--train', action='store_true', default=False, dest='train',
                             help='train neural network')
-        parser.add_argument('-e', '--estimate', action='store_true', default=False, dest='mode_estimate',
-                            help='calculate polynomial function f(x)')
+        parser.add_argument('-e', '--estimate', action='store', default=False, dest='x',
+                            type=float, help='calculate value of the polynomial function at f(x); set x')
+        parser.add_argument('-csv', '--open_csv', action='store', default=False, dest='open_csv',
+                            help='set path to csv file')
         parser.add_argument('-sm', '--save_model', action='store', default=False, dest='save_model',
                             help='set path to save model')
         parser.add_argument('-om', '--open_model', action='store', default=False, dest='open_model',
@@ -31,20 +34,29 @@ class ArgumentParser():
         parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0')
         results = parser.parse_args()
 
-        if results.mode_train:
+        if results.train:
             model = results.save_model
             if model!=False:
                 results.save_model = self.ensure_dir(model)
             else:
                 results.save_model = os.path.join(os.getcwd(), 'model')
-        if results.mode_estimate:
+            csv = results.open_csv
+            if csv!=False:
+                if not os.path.isfile(os.path.abspath(csv)):
+                    sys.exit('Error: Set correct path to csv file with input data')
+                else:
+                    results.open_model = os.path.abspath(csv)
+            else:
+                sys.exit('Error: Set path to csv file with input data')
+        if results.x:
             model = results.open_model
             if model!=False:
                 if not os.path.isfile(os.path.abspath(model)):
                     sys.exit('Error: Set correct path to model')
                 else:
                     results.open_model = os.path.abspath(model)
-
+            else:
+                sys.exit('Error: Set path to model')
         return (results)
 
     def ensure_dir(self, file_path):
@@ -94,12 +106,14 @@ class ModelFileOperations():
 
 class TrainNN(ReadCSV):
 
-    def __init__(self, csv_file, polynomial_degree):
+    def __init__(self, csv_file, polynomial_degree, learning_rate, iterations):
         '''
         initial parameters
         
         :param csv_file: csv file path
         :param polynomial_degree: int
+        :param learning_rate: alpha < 1
+        :param iterations: in
 
         set objects:
         vector_points_x, vector_points_y from csv file
@@ -108,12 +122,13 @@ class TrainNN(ReadCSV):
         X = [[1, x1^1, x1^2, ..., x1^n], [1, x2^1, x2^2, ..., x2^n], ..., [1, xk^1, xk^2, ..., xk^n]]
         B - start polynomial coefficient;
         Y = [y1, y2, ..., yk]
-        alpha
         '''
 
         super().__init__(csv_file)
         self.vector_points_x, self.vector_points_y = self.read_csv_data(csv_file)
         self.polynomial_degree = polynomial_degree
+        self.alpha = learning_rate
+        self.iterations = iterations
         k = len(self.vector_points_x)
         X = []
         x0 = np.ones(k)
@@ -124,12 +139,11 @@ class TrainNN(ReadCSV):
         self.X = np.array(X).T
         self.B = np.zeros(polynomial_degree+1)
         self.Y = np.array(self.vector_points_y)
-        self.alpha = 0.0000000000000000001
 
     def train(self):
         initial_cost = self.cost_function(self.X, self.Y, self.B)
-        B, cost, rmse, r2_score = self.gradient_descent(self.X, self.Y, self.B, self.alpha)
-        return(B, cost, rmse, r2_score)
+        B, rmse, r2_score = self.gradient_descent(self.X, self.Y, self.B, self.alpha, self.iterations)
+        return(B, rmse, r2_score)
 
     def cost_function(self, X, Y, B):
         '''
@@ -170,24 +184,25 @@ class TrainNN(ReadCSV):
         r2 = 1 - (ss_res / ss_tot)
         return(r2)
 
-    def gradient_descent(self, X, Y, B, alpha):
+    def gradient_descent(self, X, Y, B, alpha, iterations):
         '''
         Gradient Descent
         :param X: input X values
         :param Y: input Y values
         :param B: start polynomial coefficient
-        :param alpha: parameter
+        :param alpha: learning ratio parameter
+        :param iterations: number of iterations
         :return: B - output polynomial coefficient
                 cost, rmse, r2_score - this parameters say about accuracy of model
         '''
 
-        # Y_pred = Y * 2
-        # cost = 0
+        Y_pred = X.dot(B)
+        # cost = 1
         # rmse = self.rmse(Y, Y_pred)
         # r2_score = self.r2_score(Y, Y_pred)
         m = len(Y)
 
-        for iteration in range(100000):
+        for iteration in range(iterations):
         # while rmse > 0.001:
             # Hypothesis Values
             h = X.dot(B)
@@ -200,10 +215,10 @@ class TrainNN(ReadCSV):
             # new cost value
             cost = self.cost_function(X, Y, B)
             Y_pred = X.dot(B)
-            rmse = self.rmse(Y, Y_pred)
-            r2_score = self.r2_score(Y, Y_pred)
-            print('iter: '+str(iteration) + '; cost: ' + str(cost))
-        return(B, cost, rmse, r2_score)
+            print(str(round(iteration/iterations*100,2)) + '%; iter:' + str(iteration) + '; cost: ' + str(cost))
+        rmse = self.rmse(Y, Y_pred)
+        r2_score = self.r2_score(Y, Y_pred)
+        return(B, rmse, r2_score)
 
 class Classify():
 
@@ -213,40 +228,42 @@ class Classify():
 
     def estimate(self):
         polynomial_coefficients = self.model
+        x = self.x
         polynomial_degree = len(self.model)
         powers = [n for n in reversed(range(polynomial_degree))]
         y = 0
 
         for power, coefficient in zip(powers, polynomial_coefficients):
-            y = y + (coefficient * (self.x**power))
+            y = y + (coefficient * (x**power))
         return(y)
 
 
 
 def main():
     results = ArgumentParser().parser()
-    if results.mode_train:
-        print(results.save_model, results.learning_rate, results.iterations)
-    if results.mode_estimate:
-        print(results.open_model, results.polynomial_degree)
+    if results.train:
+        B, rmse, r2_score = TrainNN(csv_file=results.open_csv,
+                                    polynomial_degree=results.polynomial_degree,
+                                    learning_rate=results.learning_rate,
+                                    iterations=results.iterations).train()
+        print('rmse=' + str(rmse))
+        print('r2 score=' + str(r2_score))
+        print('coefficient:')
+        print(B)
+        ModelFileOperations().save_model(model=B, model_path=results.save_model)
+    if results.x:
+        model = ModelFileOperations().open_model(model_path=results.open_model)
+        y = Classify(model=model, x=results.x).estimate()
+        print('f(' + str(results.x) + ')=' + str(y))
 
-    # parser = ArgumentParser()
-    # results = parser.parser()
-    # mode_rec = results.mode_rec
-    # mode_srec = results.mode_srec
-    # mode_oov = results.mode_oov
-    # dictionary_text_file = results.file_dic
-    # levenstein_text_file = results.file_lev
-    # save_path = results.save_path
-
-    # csv_file_path = 'ai-task-samples.csv'
-    # B, cost, rmse, r2_score = TrainNN(csv_file_path, 2).train()
+    # # csv_file_path = 'ai-task-samples.csv'
+    # B, rmse, r2_score = TrainNN(csv_file_path, 2).train()
     # ModelFileOperations().save_model(model=B, model_path='model')
     # print(rmse, r2_score)
     # print(B)
-    #
+    # #
     # model = ModelFileOperations().open_model(model_path='model')
-    # y = Classify(model=model, x=3).estimate()
+    # y = Classify(model=model, x=results.x).estimate()
     # print(y)
 
 if __name__ == "__main__":
