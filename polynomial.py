@@ -3,8 +3,33 @@
 import numpy as np
 import os
 import pickle
+import argparse
 
 # class CheckFileExist():
+
+class ArgumentParser():
+    def __init__(self):
+        self.parser()
+
+    def parser(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-t', '--train', action='store_true', default=False, dest='mode_train',
+                            help='train neural network')
+        parser.add_argument('-e', '--estimate', action='store_true', default=False, dest='mode_estimate',
+                            help='calculate polynomial function f(x)')
+        parser.add_argument('-sm', '--save_model', action='store', default='model', dest='save_model',
+                            help='set path to save model')
+        parser.add_argument('-om', '--open_model', action='store', default='model', dest='open_model',
+                            help='set path to open model')
+        parser.add_argument('-pd', '--polynomial_degree', action='store', default=2, dest='polynomial_degree',
+                            type=int, help='set polynomial degree')
+        parser.add_argument('-lr', action='store', default=0.0000001, dest='learning_rate', type=float,
+                            help='set learning rate parameter')
+        parser.add_argument('-i', action='store', default=1000000, dest='iterations', type=int,
+                            help='set number of iterations')
+        parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0')
+        results = parser.parse_args()
+        return(results)
 
 class ReadCSV():
 
@@ -75,7 +100,7 @@ class TrainNN(ReadCSV):
         self.X = np.array(X).T
         self.B = np.zeros(polynomial_degree+1)
         self.Y = np.array(self.vector_points_y)
-        self.alpha = 0.0001
+        self.alpha = 0.0000000000000000001
 
     def train(self):
         initial_cost = self.cost_function(self.X, self.Y, self.B)
@@ -132,13 +157,14 @@ class TrainNN(ReadCSV):
                 cost, rmse, r2_score - this parameters say about accuracy of model
         '''
 
-        Y_pred = Y * 2
-        cost = 0
-        rmse = self.rmse(Y, Y_pred)
-        r2_score = self.r2_score(Y, Y_pred)
+        # Y_pred = Y * 2
+        # cost = 0
+        # rmse = self.rmse(Y, Y_pred)
+        # r2_score = self.r2_score(Y, Y_pred)
         m = len(Y)
 
-        while rmse > 0.001:
+        for iteration in range(100000):
+        # while rmse > 0.001:
             # Hypothesis Values
             h = X.dot(B)
             # difference b/w hypothesis and actual Y
@@ -152,6 +178,7 @@ class TrainNN(ReadCSV):
             Y_pred = X.dot(B)
             rmse = self.rmse(Y, Y_pred)
             r2_score = self.r2_score(Y, Y_pred)
+            print('iter: '+str(iteration) + '; cost: ' + str(cost))
         return(B, cost, rmse, r2_score)
 
 class Classify():
@@ -170,14 +197,33 @@ class Classify():
             y = y + (coefficient * (self.x**power))
         return(y)
 
+
+
 def main():
-    # csv_file_path = 'ai-task-132.csv'
+    results = ArgumentParser().parser()
+    if results.mode_train:
+        print(results.save_model, results.learning_rate, results.iterations)
+    if results.mode_estimate:
+        print(results.open_model, results.polynomial_degree)
+
+    # parser = ArgumentParser()
+    # results = parser.parser()
+    # mode_rec = results.mode_rec
+    # mode_srec = results.mode_srec
+    # mode_oov = results.mode_oov
+    # dictionary_text_file = results.file_dic
+    # levenstein_text_file = results.file_lev
+    # save_path = results.save_path
+
+    # csv_file_path = 'ai-task-samples.csv'
     # B, cost, rmse, r2_score = TrainNN(csv_file_path, 2).train()
     # ModelFileOperations().save_model(model=B, model_path='model')
-
-    model = ModelFileOperations().open_model(model_path='model')
-    y = Classify(model=model, x=3).estimate()
-    print(y)
+    # print(rmse, r2_score)
+    # print(B)
+    #
+    # model = ModelFileOperations().open_model(model_path='model')
+    # y = Classify(model=model, x=3).estimate()
+    # print(y)
 
 if __name__ == "__main__":
     main()
