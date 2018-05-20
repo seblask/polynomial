@@ -1,13 +1,11 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import os
 import pickle
 import argparse
 import sys
-import math
 
-# class CheckFileExist():
 
 class ArgumentParser():
     def __init__(self):
@@ -36,12 +34,12 @@ class ArgumentParser():
 
         if results.train:
             model = results.save_model
-            if model!=False:
+            if model != False:
                 results.save_model = self.ensure_dir(model)
             else:
                 results.save_model = os.path.join(os.getcwd(), 'model')
             csv = results.open_csv
-            if csv!=False:
+            if csv != False:
                 if not os.path.isfile(os.path.abspath(csv)):
                     sys.exit('Error: Set correct path to csv file with input data')
                 else:
@@ -50,7 +48,7 @@ class ArgumentParser():
                 sys.exit('Error: Set path to csv file with input data')
         if results.x:
             model = results.open_model
-            if model!=False:
+            if model != False:
                 if not os.path.isfile(os.path.abspath(model)):
                     sys.exit('Error: Set correct path to model')
                 else:
@@ -68,9 +66,9 @@ class ArgumentParser():
 
 
 class ReadCSV():
-
     def __init__(self, csv_file):
         self.csv_file = csv_file
+
     # def set_csv_file_path(self, csv_file):
     #     self.csv_file = csv_file
     #     return(csv_file)
@@ -88,24 +86,24 @@ class ReadCSV():
                 x, y = line.strip().split(',')
                 vetor_points_x.append(float(x))
                 vetor_points_y.append(float(y))
-        return(vetor_points_x, vetor_points_y)
+        return (vetor_points_x, vetor_points_y)
+
 
 class ModelFileOperations():
-
     def save_model(self, model, model_path):
         model_path = os.path.abspath(model_path)
         with open(model_path, 'wb') as write_model:
             pickle.dump(model, write_model)
-        return(model_path)
+        return (model_path)
 
     def open_model(self, model_path):
         model_path = os.path.abspath(model_path)
         with open(model_path, 'rb') as read_model:
             model = pickle.load(read_model)
-        return(model)
+        return (model)
+
 
 class TrainNN(ReadCSV):
-
     def __init__(self, csv_file, polynomial_degree, learning_rate, iterations):
         '''
         initial parameters
@@ -133,17 +131,17 @@ class TrainNN(ReadCSV):
         X = []
         x0 = np.ones(k)
         for n in reversed(range(polynomial_degree)):
-            x_n = np.array([x**(n+1) for x in self.vector_points_x])
+            x_n = np.array([x ** (n + 1) for x in self.vector_points_x])
             X.append(x_n)
         X.append(x0)
         self.X = np.array(X).T
-        self.B = np.zeros(polynomial_degree+1)
+        self.B = np.zeros(polynomial_degree + 1)
         self.Y = np.array(self.vector_points_y)
 
     def train(self):
         initial_cost = self.cost_function(self.X, self.Y, self.B)
         B, rmse, r2_score = self.gradient_descent(self.X, self.Y, self.B, self.alpha, self.iterations)
-        return(B, rmse, r2_score)
+        return (B, rmse, r2_score)
 
     def cost_function(self, X, Y, B):
         '''
@@ -157,7 +155,7 @@ class TrainNN(ReadCSV):
 
         m = len(Y)
         J = np.sum((X.dot(B) - Y) ** 2) / (2 * m)
-        return(J)
+        return (J)
 
     def rmse(self, Y, Y_pred):
         '''
@@ -168,7 +166,7 @@ class TrainNN(ReadCSV):
         '''
 
         rmse = np.sqrt(sum((Y - Y_pred) ** 2) / len(Y))
-        return(rmse)
+        return (rmse)
 
     def r2_score(self, Y, Y_pred):
         '''
@@ -182,7 +180,7 @@ class TrainNN(ReadCSV):
         ss_tot = sum((Y - mean_y) ** 2)
         ss_res = sum((Y - Y_pred) ** 2)
         r2 = 1 - (ss_res / ss_tot)
-        return(r2)
+        return (r2)
 
     def gradient_descent(self, X, Y, B, alpha, iterations):
         '''
@@ -198,12 +196,13 @@ class TrainNN(ReadCSV):
 
         Y_pred = X.dot(B)
         # cost = 1
+        start_cost = self.cost_function(X, Y, B)
         # rmse = self.rmse(Y, Y_pred)
         # r2_score = self.r2_score(Y, Y_pred)
         m = len(Y)
 
         for iteration in range(iterations):
-        # while rmse > 0.001:
+            # while rmse > 0.001:
             # Hypothesis Values
             h = X.dot(B)
             # difference b/w hypothesis and actual Y
@@ -214,14 +213,16 @@ class TrainNN(ReadCSV):
             B = B - alpha * gradient
             # new cost value
             cost = self.cost_function(X, Y, B)
+            if start_cost-cost<0:
+                sys.exit('Error, Set lower learning rate')
             Y_pred = X.dot(B)
-            print(str(round(iteration/iterations*100,2)) + '%; iter:' + str(iteration) + '; cost: ' + str(cost))
+            print(str(round(iteration / iterations * 100, 2)) + '%; iter:' + str(iteration) + '; cost: ' + str(cost))
         rmse = self.rmse(Y, Y_pred)
         r2_score = self.r2_score(Y, Y_pred)
-        return(B, rmse, r2_score)
+        return (B, rmse, r2_score)
+
 
 class Classify():
-
     def __init__(self, model, x):
         self.model = model
         self.x = x
@@ -234,9 +235,8 @@ class Classify():
         y = 0
 
         for power, coefficient in zip(powers, polynomial_coefficients):
-            y = y + (coefficient * (x**power))
-        return(y)
-
+            y = y + (coefficient * (x ** power))
+        return (y)
 
 
 def main():
@@ -256,15 +256,6 @@ def main():
         y = Classify(model=model, x=results.x).estimate()
         print('f(' + str(results.x) + ')=' + str(y))
 
-    # # csv_file_path = 'ai-task-samples.csv'
-    # B, rmse, r2_score = TrainNN(csv_file_path, 2).train()
-    # ModelFileOperations().save_model(model=B, model_path='model')
-    # print(rmse, r2_score)
-    # print(B)
-    # #
-    # model = ModelFileOperations().open_model(model_path='model')
-    # y = Classify(model=model, x=results.x).estimate()
-    # print(y)
 
 if __name__ == "__main__":
     main()
