@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pickle
 import argparse
+import sys
 
 # class CheckFileExist():
 
@@ -17,9 +18,9 @@ class ArgumentParser():
                             help='train neural network')
         parser.add_argument('-e', '--estimate', action='store_true', default=False, dest='mode_estimate',
                             help='calculate polynomial function f(x)')
-        parser.add_argument('-sm', '--save_model', action='store', default='model', dest='save_model',
+        parser.add_argument('-sm', '--save_model', action='store', default=False, dest='save_model',
                             help='set path to save model')
-        parser.add_argument('-om', '--open_model', action='store', default='model', dest='open_model',
+        parser.add_argument('-om', '--open_model', action='store', default=False, dest='open_model',
                             help='set path to open model')
         parser.add_argument('-pd', '--polynomial_degree', action='store', default=2, dest='polynomial_degree',
                             type=int, help='set polynomial degree')
@@ -29,7 +30,30 @@ class ArgumentParser():
                             help='set number of iterations')
         parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0')
         results = parser.parse_args()
-        return(results)
+
+        if results.mode_train:
+            model = results.save_model
+            if model!=False:
+                results.save_model = self.ensure_dir(model)
+            else:
+                results.save_model = os.path.join(os.getcwd(), 'model')
+        if results.mode_estimate:
+            model = results.open_model
+            if model!=False:
+                if not os.path.isfile(os.path.abspath(model)):
+                    sys.exit('Error: Set correct path to model')
+                else:
+                    results.open_model = os.path.abspath(model)
+
+        return (results)
+
+    def ensure_dir(self, file_path):
+        directory = os.path.dirname(file_path)
+        basename = os.path.basename(file_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        return (os.path.join(directory, basename))
+
 
 class ReadCSV():
 
